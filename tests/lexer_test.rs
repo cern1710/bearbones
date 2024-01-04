@@ -5,41 +5,39 @@ use bearbones::error::Error;
 mod test_lexer {
     use super::*;
 
+    fn print_error<T: std::fmt::Debug, E: std::fmt::Debug>(src: &str,
+            expected: &Result<Vec<T>, E>, received: &Result<Vec<T>, E>) {
+        println!("Test failed for input: {:?}", src);
+        match (expected, received) {
+            (Ok(expected_tokens), Ok(output)) => {
+                println!("Expected tokens: {:#?}", expected_tokens);
+                println!("Received tokens: {:#?}", output);
+            },
+            (Err(expected_error), Err(e)) => {
+                println!("Expected error: {:#?}", expected_error);
+                println!("Received error: {:#?}", e);
+            },
+            _ => {
+                println!("Expected: {:#?}", expected);
+                println!("Received: {:#?}", received);
+            }
+        }
+    }
+
     fn test_lexer(src: &str, expected: Result<Vec<TokenKind>, Error>) -> bool {
         let result = Lexer::new(src).scanner()
             .map(|tokens| tokens.iter().map(|t| t.kind.clone()).collect::<Vec<_>>());
 
         match (&result, &expected) {
-            (Ok(output), Ok(expected_tokens)) => {
-                if output == expected_tokens {
-                    true
-                } else {
-                    println!("Test failed for input: {:?}", src);
-                    println!("Expected tokens: {:#?}", expected_tokens);
-                    println!("Received tokens: {:#?}", output);
-                    false
-                }
-            },
-            (Err(e), Err(expected_error)) => {
-                if std::mem::discriminant(e) == std::mem::discriminant(expected_error) {
-                    true
-                } else {
-                    println!("Test failed for input: {:?}", src);
-                    println!("Expected error: {:#?}", expected_error);
-                    println!("Received error: {:#?}", e);
-                    false
-                }
-            },
+            (Ok(output), Ok(expected_tokens)) if output == expected_tokens => true,
+            (Err(e), Err(expected_error)) if
+                std::mem::discriminant(e) == std::mem::discriminant(expected_error) => true,
             _ => {
-                println!("Test failed for input: {:?}", src);
-                println!("Expected: {:#?}", expected);
-                println!("Received: {:#?}", result);
+                print_error(src, &expected, &result);
                 false
             }
         }
     }
-
-
 
     #[test]
     fn single_char() {
