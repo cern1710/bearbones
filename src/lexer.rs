@@ -3,6 +3,8 @@ use phf::phf_map;
 use std::iter::Peekable;
 use std::str::CharIndices;
 
+pub type Token = Spanned<TokenKind>;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Keyword {
     Const,
@@ -96,16 +98,18 @@ pub struct Span {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Token {
-    pub kind: TokenKind,
+pub struct Spanned<T> {
+    pub kind: T,
     pub span: Span,
 }
 
-impl Token {
-    pub const fn new(kind: TokenKind, span: Span) -> Self {
-        Self { kind, span }
+impl<T> Spanned<T> {
+    pub fn new(kind: T, span: Span) -> Self {
+        Spanned { kind, span }
     }
+}
 
+impl Token {
     pub const fn is_id(&self) -> bool {
         matches!(self.kind, TokenKind::Id(_))
     }
