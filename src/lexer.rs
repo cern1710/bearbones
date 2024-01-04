@@ -255,7 +255,7 @@ impl<'a> Lexer<'a> {
                 _ => c,
             },
             Some((_, _))
-                => return Err(Error::InvalidEscChar(self.new_span(start, 2))),
+                => return Err(Error::EscNotFound(self.new_span(start, 2))),
             None => return Err(Error::UnexpectedEndOfInput),
         };
         self.finish(start, character, 2)

@@ -1,39 +1,38 @@
 use bearbones::lexer::{Pos, Span, Lexer, TokenKind, Operator, Keyword};
+use bearbones::error::Error;
 
 #[cfg(test)]
 mod test_lexer {
     use super::*;
 
-    fn test_lexer(src: &str, expected_tokens: &[TokenKind]) -> bool {
-        match Lexer::new(src).scanner() {
-            Ok(tokens) => {
-                let output = tokens
-                    .iter()
-                    .map(|t| t.kind.clone())
-                    .collect::<Vec<TokenKind>>();
-                println!("Output: {:#?}", output);
-                output.as_slice() == expected_tokens
+    fn test_lexer(src: &str, expected: Result<Vec<TokenKind>, Error>) -> bool {
+        let result = Lexer::new(src).scanner()
+            .map(|tokens| tokens.iter().map(|t| t.kind.clone()).collect::<Vec<_>>());
+
+        match (&result, &expected) {
+            (Ok(output), Ok(expected_tokens)) => output == expected_tokens,
+            (Err(e), Err(expected_error)) => {
+                // Compare the types of errors; you might need to adjust this based on how your errors are structured
+                std::mem::discriminant(e) == std::mem::discriminant(expected_error)
             }
-            Err(error) => {
-                eprintln!("{error:?}");
-                false
-            }
+            _ => false,
         }
     }
 
+
     #[test]
     fn single_char() {
-        assert!(test_lexer(";", &[TokenKind::Operator(Operator::Semicolon)]))
+        assert!(test_lexer(";", Ok(vec![TokenKind::Operator(Operator::Semicolon)])));
     }
 
     #[test]
     fn character_literals() {
-        assert!(test_lexer("'a'", &[TokenKind::Char('a')]))
+        assert!(test_lexer("'a'", Ok(vec![TokenKind::Char('a')])));
     }
 
     #[test]
     fn true_false() {
-        assert!(test_lexer("false", &[TokenKind::Bool(false)]))
+        assert!(test_lexer("false", Ok(vec![TokenKind::Bool(false)])));
     }
 
     #[test]
@@ -44,7 +43,7 @@ mod test_lexer {
                 return 0;
             }
             "
-        , &[
+        , Ok(vec![
             TokenKind::Keyword(Keyword::Int),
             TokenKind::Id("main".into()),
             TokenKind::Operator(Operator::LeftParen),
@@ -54,7 +53,7 @@ mod test_lexer {
             TokenKind::Int(0),
             TokenKind::Operator(Operator::Semicolon),
             TokenKind::Operator(Operator::RightBrace),
-        ]))
+        ])))
     }
 
     #[test]
@@ -67,7 +66,7 @@ mod test_lexer {
                 return 0;
             }
             "
-        , &[
+        , Ok(vec![
             TokenKind::Keyword(Keyword::Int),
             TokenKind::Id("main".into()),
             TokenKind::Operator(Operator::LeftParen),
@@ -91,7 +90,7 @@ mod test_lexer {
             TokenKind::Int(0),
             TokenKind::Operator(Operator::Semicolon),
             TokenKind::Operator(Operator::RightBrace),
-        ]))
+        ])))
     }
 
     #[test]
@@ -105,5 +104,10 @@ mod test_lexer {
         assert_eq!(tokens[2].span, Span { start: Pos { line: 1, col: 8 }, end: Pos { line: 1, col: 9 } });
         assert_eq!(tokens[3].span, Span { start: Pos { line: 1, col: 10 }, end: Pos { line: 1, col: 11 } });
         assert_eq!(tokens[4].span, Span { start: Pos { line: 1, col: 11 }, end: Pos { line: 1, col: 12 } });
+    }
+
+    #[test]
+    fn empty_char() {
+        assert!(test_lexer( "''", Err(Error::EmptyChar(Span {start: Pos { line: 1, col: 1 }, end: Pos { line: 1, col: 2 }}))));
     }
 }
