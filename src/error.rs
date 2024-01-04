@@ -1,6 +1,11 @@
 use crate::lexer::{Span};
 
-// #[derive(Clone, Debug, PartialEq)]
+#[derive(Debug)]
 pub enum Error {
-    EmptyCharacter(Span),
+    EmptyChar(Span),
+    CharNotAscii(Span),
+    InvalidEscChar(Span),
+    CharNotTerminated(Span),
+    CharExpected(Span),
+    UnexpectedEndOfInput
 }
