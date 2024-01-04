@@ -1,4 +1,4 @@
-use crate::lexer::{Pos, Span, Token};
+use crate::lexer::{Span};
 
 // #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
