@@ -10,14 +10,35 @@ mod test_lexer {
             .map(|tokens| tokens.iter().map(|t| t.kind.clone()).collect::<Vec<_>>());
 
         match (&result, &expected) {
-            (Ok(output), Ok(expected_tokens)) => output == expected_tokens,
+            (Ok(output), Ok(expected_tokens)) => {
+                if output == expected_tokens {
+                    true
+                } else {
+                    println!("Test failed for input: {:?}", src);
+                    println!("Expected tokens: {:#?}", expected_tokens);
+                    println!("Received tokens: {:#?}", output);
+                    false
+                }
+            },
             (Err(e), Err(expected_error)) => {
-                // Compare the types of errors; you might need to adjust this based on how your errors are structured
-                std::mem::discriminant(e) == std::mem::discriminant(expected_error)
+                if std::mem::discriminant(e) == std::mem::discriminant(expected_error) {
+                    true
+                } else {
+                    println!("Test failed for input: {:?}", src);
+                    println!("Expected error: {:#?}", expected_error);
+                    println!("Received error: {:#?}", e);
+                    false
+                }
+            },
+            _ => {
+                println!("Test failed for input: {:?}", src);
+                println!("Expected: {:#?}", expected);
+                println!("Received: {:#?}", result);
+                false
             }
-            _ => false,
         }
     }
+
 
 
     #[test]
@@ -109,5 +130,30 @@ mod test_lexer {
     #[test]
     fn empty_char() {
         assert!(test_lexer( "''", Err(Error::EmptyChar(Span {start: Pos { line: 1, col: 1 }, end: Pos { line: 1, col: 2 }}))));
+    }
+
+    #[test]
+    fn non_ascii() {
+        assert!(test_lexer( "'ö'", Err(Error::CharNotAscii(Span {start: Pos { line: 1, col: 1 }, end: Pos { line: 1, col: 3 }}))));
+    }
+
+    #[test]
+    fn esc_not_found() {
+        assert!(test_lexer( "'\\q'", Err(Error::EscNotFound(Span {start: Pos { line: 1, col: 1 }, end: Pos { line: 1, col: 3 }}))));
+    }
+
+    #[test]
+    fn char_not_terminated() {
+        assert!(test_lexer( "'  '", Err(Error::CharNotTerminated(Span {start: Pos { line: 1, col: 1 }, end: Pos { line: 1, col: 2 }}))));
+    }
+
+    #[test]
+    fn char_expected() {
+        assert!(test_lexer( "'", Err(Error::CharExpected(Span {start: Pos { line: 1, col: 1 }, end: Pos { line: 1, col: 2 }}))));
+    }
+
+    #[test]
+    fn unexpected_end() {
+        assert!(test_lexer( "'\\", Err(Error::UnexpectedEndOfInput)));
     }
 }
